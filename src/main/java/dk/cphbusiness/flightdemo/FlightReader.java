@@ -36,9 +36,6 @@ public class FlightReader {
             String formattedDuration = flightReader.formatDuration(lufthansaTotalDuration);
             System.out.println("Total flight time for Lufthansa: " + formattedDuration);
 
-           /* flightInfoList.forEach(f->{
-                System.out.println("\n"+f);
-            });*/
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,7 +52,7 @@ public class FlightReader {
     //Når flights er filtreret (.equals "Lufthansa") finder vi average for alle de flights.
     //Vi tager herefter fat i MapToDouble hvor vi hiver duration af flights ud med en fucked format 'P1H50M', og laver
     // det om til minutes. (Fra AirportTime fra DTO).
-    public double airLineAvg (String airLine){
+    public double airLineAvg(String airLine) {
         double averageForLufthansa = flightInfoList
                 .stream().filter(flightInfo -> airLine.equals(flightInfo.getAirline()))
                 .mapToDouble(flightInfo -> flightInfo.getDuration().toMinutes())
@@ -67,7 +64,7 @@ public class FlightReader {
         return averageForLufthansa;
     }
 
-    public double airLineSum (String airLine){
+    public double airLineSum(String airLine) {
         double totalForLufthansa = flightInfoList
                 .stream().filter(flightInfo -> airLine.equals(flightInfo.getAirline()))
                 .mapToDouble(flightInfo -> flightInfo.getDuration().toMinutes())
@@ -106,13 +103,11 @@ public class FlightReader {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
-    public Duration getTotalFlightTime(List<DTOs.FlightDTO> flightList)
-    {
+    public Duration getTotalFlightTime(List<DTOs.FlightDTO> flightList) {
         Duration totalDuration = flightList.stream()
                 .filter(flight -> "Lufthansa".equals(flight.getAirline().getName()))
                 .map(flight -> Duration.between(flight.getDeparture().getScheduled(), flight.getArrival().getScheduled()))
                 .reduce(Duration.ZERO, Duration::plus); // Sum up all durations
-
 
 
         return totalDuration;
