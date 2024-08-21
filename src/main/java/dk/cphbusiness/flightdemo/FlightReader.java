@@ -30,6 +30,15 @@ public class FlightReader {
             flightReader.airLineAvg("Lufthansa");
             flightReader.airLineSum("Lufthansa");
 
+            List<DTOs.FlightInfo> flightInfoList = flightReader.getFlightInfoDetails(flightList);
+
+            Duration lufthansaTotalDuration = flightReader.getTotalFlightTime(flightList);
+            String formattedDuration = flightReader.formatDuration(lufthansaTotalDuration);
+            System.out.println("Total flight time for Lufthansa: " + formattedDuration);
+
+           /* flightInfoList.forEach(f->{
+                System.out.println("\n"+f);
+            });*/
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,12 +98,31 @@ public class FlightReader {
         return flightInfoList;
     }
 
+    public String formatDuration(Duration duration) {
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    public Duration getTotalFlightTime(List<DTOs.FlightDTO> flightList)
+    {
+        Duration totalDuration = flightList.stream()
+                .filter(flight -> "Lufthansa".equals(flight.getAirline().getName()))
+                .map(flight -> Duration.between(flight.getDeparture().getScheduled(), flight.getArrival().getScheduled()))
+                .reduce(Duration.ZERO, Duration::plus); // Sum up all durations
+
+
+
+        return totalDuration;
+    }
+
+
     public List<DTOs.FlightDTO> getFlightsFromFile(String filename) throws IOException {
         DTOs.FlightDTO[] flights = new Utils().getObjectMapper().readValue(Paths.get(filename).toFile(), DTOs.FlightDTO[].class);
 
         List<DTOs.FlightDTO> flightList = Arrays.stream(flights).toList();
         return flightList;
     }
-
-
 }
