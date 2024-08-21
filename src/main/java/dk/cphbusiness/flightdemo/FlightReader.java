@@ -1,20 +1,12 @@
 package dk.cphbusiness.flightdemo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.cphbusiness.utils.Utils;
-import lombok.*;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Purpose:
@@ -22,23 +14,32 @@ import java.util.*;
  * @author: Thomas Hartmann
  */
 public class FlightReader {
+    static List<DTOs.FlightInfo> flightInfoList;
+
 
     public static void main(String[] args) {
         FlightReader flightReader = new FlightReader();
+
         try {
             List<DTOs.FlightDTO> flightList = flightReader.getFlightsFromFile("flights.json");
+            flightInfoList = flightReader.getFlightInfoDetails(flightList);
+            flightInfoList.forEach(f -> {
+                System.out.println("\n" + f);
+            });
+
+            flightReader.airLineAvg("Lufthansa");
+            flightReader.airLineSum("Lufthansa");
+
             List<DTOs.FlightInfo> flightInfoList = flightReader.getFlightInfoDetails(flightList);
 
             Duration lufthansaTotalDuration = flightReader.getTotalFlightTime(flightList);
             String formattedDuration = flightReader.formatDuration(lufthansaTotalDuration);
             System.out.println("Total flight time for Lufthansa: " + formattedDuration);
 
-           /* flightInfoList.forEach(f->{
-                System.out.println("\n"+f);
-            });*/
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
 
@@ -46,6 +47,33 @@ public class FlightReader {
 //        List<FlightDTO> flights = getObjectMapper().readValue(Paths.get(fileName).toFile(), List.class);
 //        return flights;
 //    }
+
+    //Vi instantiere en double. Herefter tager vi fat i alle flights, og filtrerer specifikt efter Lufthansa.
+    //Når flights er filtreret (.equals "Lufthansa") finder vi average for alle de flights.
+    //Vi tager herefter fat i MapToDouble hvor vi hiver duration af flights ud med en fucked format 'P1H50M', og laver
+    // det om til minutes. (Fra AirportTime fra DTO).
+    public double airLineAvg(String airLine) {
+        double averageForLufthansa = flightInfoList
+                .stream().filter(flightInfo -> airLine.equals(flightInfo.getAirline()))
+                .mapToDouble(flightInfo -> flightInfo.getDuration().toMinutes())
+                .average()
+                .orElse(0.0);
+
+        System.out.println("\n \n \nAvg tid for " + airLine + " flytider er " + averageForLufthansa + " min.");
+
+        return averageForLufthansa;
+    }
+
+    public double airLineSum(String airLine) {
+        double totalForLufthansa = flightInfoList
+                .stream().filter(flightInfo -> airLine.equals(flightInfo.getAirline()))
+                .mapToDouble(flightInfo -> flightInfo.getDuration().toMinutes())
+                .sum();
+
+        System.out.println("\n \n \nTotal tid for " + airLine + " flytider er " + totalForLufthansa + " min.");
+
+        return totalForLufthansa;
+    }
 
 
     public List<DTOs.FlightInfo> getFlightInfoDetails(List<DTOs.FlightDTO> flightList) {
@@ -75,13 +103,11 @@ public class FlightReader {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
-    public Duration getTotalFlightTime(List<DTOs.FlightDTO> flightList)
-    {
+    public Duration getTotalFlightTime(List<DTOs.FlightDTO> flightList) {
         Duration totalDuration = flightList.stream()
                 .filter(flight -> "Lufthansa".equals(flight.getAirline().getName()))
                 .map(flight -> Duration.between(flight.getDeparture().getScheduled(), flight.getArrival().getScheduled()))
                 .reduce(Duration.ZERO, Duration::plus); // Sum up all durations
-
 
 
         return totalDuration;
